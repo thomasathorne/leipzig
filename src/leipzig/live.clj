@@ -1,5 +1,5 @@
 (ns leipzig.live
-  (:require [overtone.live :as overtone]
+  (:require [overtone.core :as overtone]
             [leipzig.melody :as melody]))
 
 (defmulti play-note
@@ -28,29 +28,28 @@
   (overtone/stop)
   (reset! channels []))
 
-(defn- translate [notes]
+(defn- translate
+  [notes start-time]
   (->> notes
        (melody/after (-> notes first :time -)) ; Allow for notes that lead in.
        (melody/after 0.1) ; Make sure we have time to realise the seq.
        (melody/where :time (partial * 1000))
-       (melody/after (overtone/now))))
+       (melody/after start-time)))
 
 (defn play
   "Plays notes now.
   e.g. (->> melody play)"
-  [notes] 
-  (->>
-    notes
-    translate
-    trickle
-    (map (fn [{epoch :time :as note}]
-           (->> (dissoc note :time)
-                play-note
-                (overtone/at epoch)
-                (when (< (overtone/now) epoch))))) ; Don't play notes in the past.
-    dorun
-    future
-    register))
+  ([notes start-time]
+   (->> (translate notes start-time)
+        trickle
+        (map (fn [{epoch :time :as note}]
+               (->> (dissoc note :time)
+                    play-note
+                    (overtone/at epoch)
+                    (when (< (overtone/now) epoch))))) ; Don't play notes in the past.
+        dorun
+        future
+        register)))
 
 (defn- forever
   "Lazily loop riff forever. riff must start with a positive :time, otherwise there
@@ -71,5 +70,8 @@
 
        ; Later...
        (def melody nil)"
-  [riff]
-  (->> riff forever play))
+  [riffs]
+  (let [o-now (overtone/now)]
+    (map (fn [riff]
+           (play (forever riff) o-now))
+         riffs)))
