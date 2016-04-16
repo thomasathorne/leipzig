@@ -1,17 +1,20 @@
 (ns leipzig.scale
-  (:require [clojure.math.numeric-tower :as math]))
-
-(defmacro defs [names docstring values]
-  `(do ~@(map
-     (fn [name value] `(def ~name ~docstring ~value))
-     names (eval values))))
+  #?(:clj (:require [clojure.math.numeric-tower :as math])))
 
 (defn- sum-n [series n] (apply + (take n series)))
+
+(def floor
+  #?(:clj #(math/floor %)
+     :cljs #(.floor js/Math %)))
+
+(def ceil
+  #?(:clj #(math/ceil %)
+     :cljs #(.ceil js/Math %)))
 
 (defmulti scale-of
   (fn [intervals degree]
     (cond 
-      (not= degree (math/floor degree)) :fraction
+      (not= degree (floor degree)) :fraction
       (neg? degree)                     :negative
       :otherwise                        :natural)))
 
@@ -22,9 +25,9 @@
 (defmethod scale-of :negative [intervals degree]
   (->> degree - (scale-of (reverse intervals)) -))
 (defmethod scale-of :fraction [intervals degree]
-  (let [lower (scale-of intervals (math/floor degree))
-        upper (scale-of intervals (math/ceil degree))
-        fraction (- degree (math/floor degree))]
+  (let [lower (scale-of intervals (floor degree))
+        upper (scale-of intervals (ceil degree))
+        fraction (- degree (floor degree))]
   (+ lower (* fraction (- upper lower)))))
 
 (def major "Seven-tone scale, commonly used in Western music." (scale [2 2 1 2 2 2 1]))
@@ -34,24 +37,26 @@
 
 (defn from [base] (partial + base))
 
-(defs
-  [C D E F G A B]
-  "A key, expressed as a translation function."
-  (map
-    (comp from (from 60) major)
-    (range)))
+(def C (from 60))
+(def D (from 62))
+(def E (from 64))
+(def F (from 65))
+(def G (from 67))
+(def A (from 69))
+(def B (from 71))
 
-(defs
-  [sharp flat]
-  "A modification of a key, expressed as a translation function."
-  [inc dec])
+(def sharp inc)
+(def flat dec)
 
 (defn mode [scale n] (comp #(- % (scale n)) scale (from n)))
 
-(defs
-  [ionian dorian phrygian lydian mixolydian aeolian locrian]
-  "A heptatonic mode."
-  (map (partial mode major) (range)))
+(def ionian (mode major 0))
+(def dorian (mode major 1))
+(def phrygian (mode major 2))
+(def lydian (mode major 3))
+(def mixolydian (mode major 4))
+(def aeolian (mode major 5))
+(def locrian (mode major 6))
 
 (def minor "Natural minor is another name for the Aeolian mode." aeolian)
 

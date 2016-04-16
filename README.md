@@ -3,14 +3,14 @@
 
 [![Build Status](https://travis-ci.org/ctford/leipzig.png)](https://travis-ci.org/ctford/leipzig)
 
-A composition library for [Overtone](https://github.com/overtone/overtone) by [@ctford](https://github.com/ctford).
+A composition library for Clojure and Clojurescript by [@ctford](https://github.com/ctford).
 
 Use
 ---
-Include it as a dependency in your `project.clj`, along with Overtone:
+Include it as a dependency in your `project.clj`, along with [Overtone](https://github.com/overtone/overtone):
 
     [overtone "0.9.1"]
-    [leipzig "0.9.0"]
+    [leipzig "0.10.0"]
 
 Leiningen template
 ------------------
@@ -206,6 +206,13 @@ The `nil`s generate notes without pitches, representing rests. This is convenien
       (tempo (bpm 90))
       (where :pitch (comp scale/C scale/major))
       live/play)
+
+Clojurescript
+-------------
+
+Leipzig supports Clojurescript for all of its namespaces save `leipzig.live`. The `live` namespace depends directly on
+Overtone, so it cannot be used in the browser. However the rest of Leipzig can be used so long as an alternative synthesis
+engine is present like the Web Audio API. [Klangmeister](http://ctford.github.io/klangmeister/) is a good example of this.
 
 Examples
 --------
